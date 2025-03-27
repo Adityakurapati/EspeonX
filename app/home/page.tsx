@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeftRight, Loader2, Plus, X } from "lucide-react"
+import sendETH from "../EthTransfer"
+import { CheckCircle } from "lucide-react";
 
 const Home = () => {
   const [selectedSkin, setSelectedSkin] = useState(null)
@@ -11,7 +13,9 @@ const Home = () => {
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("name")
-  
+  const [transactionComplete, setTransactionComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);  
+
   const [skins, setSkins] = useState([
     { id: 1, img: "https://ik.imagekit.io/j9wgmlnwk/image.png?updatedAt=1739043884431", name: "Dragon Scale", value: 245, rarity: "Legendary" },
     { id: 2, img: "https://ik.imagekit.io/j9wgmlnwk/night_owl?updatedAt=1739043883165", name: "Night Owl", value: 180, rarity: "Rare" },
@@ -20,14 +24,13 @@ const Home = () => {
   ])
 
   const traders = [
-    { id: 1, name: "Pro Trader", img: "https://ik.imagekit.io/j9wgmlnwk/image(1).png?updatedAt=1739043096087", success: 98, trades: 1200, speciality: "Rare Items" },
-    { id: 2, name: "Skin Master", img: "https://ik.imagekit.io/j9wgmlnwk/image(3).png?updatedAt=1739043107914", success: 95, trades: 856, speciality: "Epic Items" },
-    { id: 3, name: "Elite Dealer", img: "https://ik.imagekit.io/j9wgmlnwk/image(5).png?updatedAt=1739043142956", success: 97, trades: 2300, speciality: "Legendary Items" },
-    { id: 4, name: "Ultimate Collector", img: "https://ik.imagekit.io/j9wgmlnwk/image.png?updatedAt=1739043040065", success: 96, trades: 1800, speciality: "Exclusive Items" },
-    { id: 5, name: "Mystic Trader", img: "https://ik.imagekit.io/j9wgmlnwk/image(2).png?updatedAt=1739043096333", success: 94, trades: 1450, speciality: "Mythical Items" },
-    { id: 6, name: "Shadow Merchant", img: "https://ik.imagekit.io/j9wgmlnwk/image(4).png?updatedAt=1739043143257", success: 99, trades: 2750, speciality: "Dark Items" },
-];
-
+    { id: 1, name: "Pro Trader", acc_id: "0xBab04b1a4142d6682B034973c0566d3c343262bB", img: "https://ik.imagekit.io/j9wgmlnwk/image(1).png?updatedAt=1739043096087", success: 98, trades: 1200, speciality: "Rare Items" },
+    { id: 2, name: "Skin Master", acc_id: "0x2E7358E129E8Cde6E495B01C2202926DBb898A2C", img: "https://ik.imagekit.io/j9wgmlnwk/image(3).png?updatedAt=1739043107914", success: 95, trades: 856, speciality: "Epic Items" },
+    { id: 3, name: "Elite Dealer", acc_id: "0xBab04b1a4142d6682B034973c0566d3c343262bB", img: "https://ik.imagekit.io/j9wgmlnwk/image(5).png?updatedAt=1739043142956", success: 97, trades: 2300, speciality: "Legendary Items" },
+    { id: 4, name: "Ultimate Collector", acc_id: "0x2E7358E129E8Cde6E495B01C2202926DBb898A2C", img: "https://ik.imagekit.io/j9wgmlnwk/image.png?updatedAt=1739043040065", success: 96, trades: 1800, speciality: "Exclusive Items" },
+    { id: 5, name: "Mystic Trader", acc_id: "0xBab04b1a4142d6682B034973c0566d3c343262bB", img: "https://ik.imagekit.io/j9wgmlnwk/image(2).png?updatedAt=1739043096333", success: 94, trades: 1450, speciality: "Mythical Items" },
+    { id: 6, name: "Shadow Merchant", acc_id: "0x2E7358E129E8Cde6E495B01C2202926DBb898A2C", img: "https://ik.imagekit.io/j9wgmlnwk/image(4).png?updatedAt=1739043143257", success: 99, trades: 2750, speciality: "Dark Items" },
+  ];
 
   useEffect(() => {
     if (selectedTrader) {
@@ -45,7 +48,7 @@ const Home = () => {
   }, [selectedTrader])
 
   const filteredSkins = skins
-    .filter(skin => 
+    .filter(skin =>
       skin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       skin.rarity.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -62,6 +65,51 @@ const Home = () => {
       { id: skins.length + 3, img: "https://ik.imagekit.io/j9wgmlnwk/image(7).png", name: "Epic Loot", value: 340, rarity: "Legendary" },
     ]
     setSkins(prev => [...prev, ...newSkins])
+  }
+
+  const removeSkinFromArray = (skinId) => {
+    setSkins(prevSkins => prevSkins.filter(skin => skin.id !== skinId));
+  };
+
+  function handleTrading(trader) {
+    console.log("Transaction Started");
+    console.log("Selected Trader:", trader);
+
+    setSelectedTrader(trader);
+    setIsLoading(true);
+    setLoadingProgress(0);
+
+    try {
+      sendETH("0xd03ea8624C8C5987235048901fB614fDcA89b117", trader.acc_id)
+        .then((result) => {
+          console.log("Transaction Successful:", result);
+          setTransactionComplete(true);
+          setLoadingProgress(100);
+          
+          // Remove the traded skin from the array
+          if (selectedSkin) {
+            removeSkinFromArray(selectedSkin.id);
+          }
+          
+          // Reset all states after 3 seconds
+          setTimeout(() => {
+            setTransactionComplete(false);
+            setSelectedTrader(null);
+            setSelectedSkin(null);
+            setIsTradingStarted(false);
+            setIsLoading(false);
+            setLoadingProgress(0);
+          }, 3000);
+        })
+        .catch((error) => {
+          console.error("Transaction Failed:", error);
+          setLoadingProgress(0);
+          setIsLoading(false);
+        });
+    } catch (error) {
+      console.error("Error in handleTrading:", error);
+      setIsLoading(false);
+    }
   }
 
   const FloatingParticles = () => (
@@ -94,7 +142,7 @@ const Home = () => {
     <div className="relative min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 flex flex-col items-center justify-center p-4 md:p-8">
       <FloatingParticles />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 text-white text-center max-w-6xl w-full"
@@ -105,6 +153,18 @@ const Home = () => {
           </span>
         </h1>
 
+        {transactionComplete && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            className="fixed top-20 right-20 bg-green-500 text-white p-4 rounded-lg shadow-lg flex items-center gap-2"
+          >
+            <CheckCircle className="w-6 h-6" />
+            <span>Transaction Successful!</span>
+          </motion.div>
+        )}
+
         {/* Search and Sort Controls */}
         {!isTradingStarted && (
           <div className="mb-6 flex flex-col md:flex-row gap-4 justify-center items-center">
@@ -112,7 +172,7 @@ const Home = () => {
               type="text"
               placeholder="Search skins..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
             <select
@@ -125,7 +185,7 @@ const Home = () => {
             </select>
           </div>
         )}
-        
+
         {/* Selected Skin Display */}
         <AnimatePresence>
           {selectedSkin && !isTradingStarted && (
@@ -145,7 +205,7 @@ const Home = () => {
                 </button>
               </div>
               <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                <motion.img 
+                <motion.img
                   src={selectedSkin.img}
                   alt={selectedSkin.name}
                   className="w-32 h-32 rounded-lg object-cover"
@@ -185,13 +245,13 @@ const Home = () => {
                   <motion.div
                     key={trader.id}
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ 
+                    animate={{
                       opacity: 1,
                       y: 0,
                       transition: { delay: index * 0.1 }
                     }}
                     whileHover={{ scale: 1.05 }}
-                    onClick={() => setSelectedTrader(trader)}
+                    onClick={() => handleTrading(trader)}
                     className="p-4 bg-white/10 rounded-xl backdrop-blur-sm cursor-pointer hover:bg-white/20 transition-all"
                   >
                     <img src={trader.img} alt={trader.name} className="w-16 h-16 rounded-full mx-auto mb-2" />
@@ -215,9 +275,9 @@ const Home = () => {
               exit={{ opacity: 0, scale: 0.9 }}
               className="mb-8 p-6 bg-white/10 rounded-xl backdrop-blur-sm"
             >
-              <h2 className="text-2xl mb-4">Trading in Progress</h2>
+              <h2 className="text-2xl mb-4">Your Trading </h2>
               <div className="flex flex-col md:flex-row items-center justify-center gap-6">
-                <motion.div 
+                <motion.div
                   className="text-center"
                   animate={{ x: [0, 10, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -228,7 +288,7 @@ const Home = () => {
                 <div className="text-2xl">
                   <ArrowLeftRight className="animate-pulse" />
                 </div>
-                <motion.div 
+                <motion.div
                   className="text-center"
                   animate={{ x: [0, -10, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -245,10 +305,7 @@ const Home = () => {
                   transition={{ duration: 0.5 }}
                 />
               </div>
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <Loader2 className="animate-spin" />
-                <p className="text-yellow-400">Processing trade... {loadingProgress}%</p>
-              </div>
+              {transactionComplete && (<div>Back to Market</div>)}
             </motion.div>
           )}
         </AnimatePresence>
@@ -263,7 +320,7 @@ const Home = () => {
                     key={skin.id}
                     layout
                     initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ 
+                    animate={{
                       opacity: 1,
                       scale: 1,
                       transition: { delay: index * 0.05 }
@@ -271,9 +328,8 @@ const Home = () => {
                     exit={{ opacity: 0, scale: 0.8 }}
                     whileHover={{ scale: 1.05 }}
                     onClick={() => setSelectedSkin(skin)}
-                    className={`relative cursor-pointer group ${
-                      selectedSkin?.id === skin.id ? 'ring-2 ring-blue-500' : ''
-                    }`}
+                    className={`relative cursor-pointer group ${selectedSkin?.id === skin.id ? 'ring-2 ring-blue-500' : ''
+                      }`}
                   >
                     <img
                       src={skin.img}
@@ -289,7 +345,7 @@ const Home = () => {
                 ))}
               </AnimatePresence>
             </div>
-            
+
             <motion.button
               onClick={loadMoreSkins}
               className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 mx-auto"

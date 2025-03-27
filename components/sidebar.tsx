@@ -37,6 +37,13 @@ const Sidebar = () => {
         <h1 className="text-white text-2xl font-bold mb-6">Poke Fon</h1>
         <ul className="space-y-4">
           <li
+            onClick={() => navigateTo("/tournament_dashboard")}
+            className="text-white flex items-center gap-3 cursor-pointer hover:text-gray-300"
+          >
+            <Zap size={20} />
+            DashBoard
+          </li>
+          <li
             onClick={() => navigateTo("/home")}
             className="text-white flex items-center gap-3 cursor-pointer hover:text-gray-300"
           >
@@ -58,7 +65,7 @@ const Sidebar = () => {
             Voting
           </li>
           <li
-            onClick={() => navigateTo("/voting")}
+            onClick={() => navigateTo("/reward_automate")}
             className="text-white flex items-center gap-3 cursor-pointer hover:text-gray-300"
           >
             <Users size={20} />
